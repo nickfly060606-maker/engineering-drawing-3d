@@ -41,35 +41,35 @@
 
 <table>
 <tr>
-<td width="33%" align="center"><img src="docs/images/case-01.png" width="260"><br>
+<td width="33%" align="center"><a href="docs/images/case-01.png"><img src="docs/images/case-01.png" width="250"></a><br>
 <b>① 竖直圆柱 + 斜切 + 台阶</b><br>
-<sub>最开始的一题。斜切面与柱面的交线在左视图里是椭圆弧，半轴比 0.55 反过来说明斜面斜率 0.57</sub></td>
-<td width="33%" align="center"><img src="docs/images/case-02.png" width="260"><br>
+<sub>斜切面与柱面的交线是椭圆弧，半轴比 0.55 反过来印证斜面斜率 0.57</sub></td>
+<td width="33%" align="center"><a href="docs/images/case-02.png"><img src="docs/images/case-02.png" width="250"></a><br>
 <b>② 快速模式：视觉外壳</b><br>
-<sub>一条命令 3.5 秒。曲面被台阶化了 —— 这不是 bug，是模式 A 的边界，见下方「两种模式」</sub></td>
-<td width="33%" align="center"><img src="docs/images/case-03.png" width="260"><br>
+<sub>一条命令 3.5 秒。曲面被台阶化了 —— 这是模式 A 的边界，不是 bug</sub></td>
+<td width="33%" align="center"><a href="docs/images/case-03.png"><img src="docs/images/case-03.png" width="250"></a><br>
 <b>③ 圆柱 + 贯通三角孔</b><br>
-<sub>手写面片时有 998/1178 个三角形绕向与顶点法线相反，双面材质下完全看不出来</sub></td>
+<sub>998/1178 个三角形绕向相反，双面材质下完全看不出来</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="docs/images/case-04.png" width="260"><br>
+<td align="center"><a href="docs/images/case-04.png"><img src="docs/images/case-04.png" width="250"></a><br>
 <b>④ 圆筒 + 竖直凸台 + 竖孔</b><br>
-<sub>三处相贯线：凸台∩筒面、竖孔∩筒面、竖孔∩内孔。列成 7 张曲面清单逐片铺</sub></td>
-<td align="center"><img src="docs/images/case-05.png" width="260"><br>
+<sub>三处相贯线：凸台∩筒面、竖孔∩筒面、竖孔∩内孔。列成 7 张曲面清单</sub></td>
+<td align="center"><a href="docs/images/case-05.png"><img src="docs/images/case-05.png" width="250"></a><br>
 <b>⑤ 支架 · 斜面台阶 + 半圆凸台 + 倒梯形槽</b><br>
-<sub>顶面被当成一个 12 边形硬啃，耳切直接穿模，体积偏 5.2%；拆成两条独立条带后 0.003%</sub></td>
-<td align="center"><img src="docs/images/case-06.png" width="260"><br>
+<sub>顶面当 12 边形硬啃，耳切穿模导致体积偏 5.2%；拆成两条条带后 0.003%</sub></td>
+<td align="center"><a href="docs/images/case-06.png"><img src="docs/images/case-06.png" width="250"></a><br>
 <b>⑥ 选择题：槽口算不算外轮廓</b><br>
-<sub>两个选项落线率 93.2% / 99.4%，肉眼分不出；<b>最长悬空 49 px vs 3 px</b> 才是判决性的</sub></td>
+<sub>落线率 93.2% / 99.4% 肉眼分不出；<b>最长悬空 49 px vs 3 px</b> 才是判决性的</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="docs/images/case-07.png" width="260"><br>
+<td align="center"><a href="docs/images/case-07.png"><img src="docs/images/case-07.png" width="250"></a><br>
 <b>⑦ 圆柱 + 圆冠凸台 + 斜切平台</b><br>
 <sub>工具包没有"圆柱"，用 128 个侧平面当半空间拼出来，体积误差 0.043%</sub></td>
-<td align="center"><img src="docs/images/case-08.png" width="260"><br>
+<td align="center"><a href="docs/images/case-08.png"><img src="docs/images/case-08.png" width="250"></a><br>
 <b>⑧ 选择题：四个左视图挑一个</b><br>
-<sub>顶面开槽让交界面"下半截埋、上半截露"，拼块法体积偏 1.6%；改成 25 个显式面片后 0.000%</sub></td>
-<td align="center"><img src="docs/images/case-09.png" width="260"><br>
+<sub>顶面开槽让交界面半埋半露，拼块法体积偏 1.6%；改成 25 个显式面片后 0.000%</sub></td>
+<td align="center"><a href="docs/images/case-09.png"><img src="docs/images/case-09.png" width="250"></a><br>
 <b>⑨ 补画漏线</b><br>
 <sub>反投影算出漏的全是隐蔽线，8 条，与手写答案逐条吻合 —— 见下方复盘</sub></td>
 </tr>
