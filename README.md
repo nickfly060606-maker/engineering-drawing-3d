@@ -8,6 +8,7 @@
 给 AI 一张截图，换回一个可以任意旋转、<i>并且经过数值自检</i>的三维模型。</p>
 
 <p>
+<a href="https://nickfly060606-maker.github.io/engineering-drawing-3d/demo.html"><img alt="live demo" src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E8%AF%95%E7%8E%A9-%E6%8B%96%E5%8A%A8%E6%97%8B%E8%BD%AC-0f6e5c"></a>
 <img alt="license" src="https://img.shields.io/badge/license-MIT-3b7a57">
 <img alt="python" src="https://img.shields.io/badge/python-3.9%2B-3776ab">
 <img alt="node" src="https://img.shields.io/badge/node-%E2%89%A518-339933">
