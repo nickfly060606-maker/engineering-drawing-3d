@@ -1,0 +1,3 @@
+# Python 依赖（node ≥ 18 只用于 check_mesh.js 与 build_viewer.py 的语法检查）
+pillow>=9.0
+numpy>=1.21

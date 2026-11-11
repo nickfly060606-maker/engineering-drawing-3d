@@ -1,0 +1,22 @@
+# 中间产物
+_ai_work/
+*.tmp
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 交付页面（本项目按题生成，不入库）
+三视图还原-*.html
+
+# 系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/

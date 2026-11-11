@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root{
+    --ink:#16232f; --muted:#6b7c8d; --line:#d5e0ea;
+    --accent:#1f6fb2; --panel:rgba(255,255,255,.92);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:#eef3f7;color:var(--ink);
+  }
+  canvas{display:block}
+  .card{
+    position:fixed;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;backdrop-filter:blur(8px);
+  }
+  #title{top:18px;left:18px;padding:14px 18px;max-width:310px}
+  #title h1{font-size:15px;font-weight:600;letter-spacing:.2px}
+  #title p{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+  #title .tag{
+    display:inline-block;margin-top:9px;margin-right:6px;font-size:11px;color:var(--accent);
+    background:#e8f2fb;border-radius:5px;padding:3px 8px;
+  }
+  #dock{
+    bottom:20px;left:50%;transform:translateX(-50%);
+    display:flex;gap:4px;padding:6px;max-width:calc(100vw - 24px);flex-wrap:wrap;justify-content:center;
+  }
+  #dock button{
+    font:inherit;font-size:11.5px;color:var(--muted);background:transparent;
+    border:0;border-radius:8px;padding:8px 11px;cursor:pointer;transition:.15s;
+    white-space:nowrap;
+  }
+  #dock button:hover{background:#eef4fa;color:var(--ink)}
+  #dock button.on{background:var(--accent);color:#fff}
+  #hint{
+    position:fixed;bottom:78px;left:50%;transform:translateX(-50%);
+    font-size:11.5px;color:var(--muted);background:rgba(255,255,255,.7);
+    padding:6px 14px;border-radius:20px;border:1px solid var(--line);
+    pointer-events:none;
+  }
+  #loading{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:10px;font-size:13px;color:var(--muted);background:#eef3f7;
+    z-index:20;transition:opacity .4s;text-align:center;padding:20px;
+  }
+  #loading b{font-weight:600;color:var(--ink);font-size:14px}
+  @media (max-width:600px){#title,#hint{display:none}}
+</style>
+</head>
+<body>
+
+<div id="loading"><b>正在构建三维模型</b><span>加载渲染引擎…</span></div>
+
+<div id="title" class="card">
+  <h1>__TITLE__</h1>
+  <p>__SUBTITLE__</p>
+  __TAGS_HTML__
+</div>
+
+<div id="hint">拖拽旋转 · 滚轮缩放 · 右键平移</div>
+
+<div id="dock" class="card">
+__VIEW_BUTTONS__
+  <button id="spin" class="__SPIN_ON__">自动旋转</button>
+</div>
+
+<!--THREE_SOURCES-->
+
+<script>
+  window.__viewerOK = false;
+  setTimeout(function(){
+    if (!window.__viewerOK) {
+      var el = document.getElementById('loading');
+      if (el) el.innerHTML = '<b>渲染引擎未能启动</b><span>引擎是内联的，不该联网。请用 build_viewer.py 重新生成页面</span>';
+    }
+  }, 9000);
+</script>
+
+<script type="module">
+/* ====== 引擎加载：three.js 已内联在本页里，不走 CDN、不需要联网 ======
+ * 三个源各自打成 Blob URL 再动态 import —— 不用 importmap（它无法多源兜底，
+ * 且必须静态声明），OrbitControls / BufferGeometryUtils 里的 `from 'three'`
+ * 在运行时改写成同一个 Blob URL，保证三份代码共用同一个 three 实例。 */
+const { THREE, OrbitControls, mergeVertices } = await (async function () {
+  const src = (id) => {
+    const el = document.getElementById(id);
+    if (!el) throw new Error('缺少内联引擎源 ' + id + '，页面需由 build_viewer.py 生成');
+    return el.textContent;
+  };
+  const blob = (code) => URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+  const threeUrl = blob(src('vw-three'));
+  const addon = (id) => blob(src(id).replace(/from\s*(['"])three\1/g, 'from ' + JSON.stringify(threeUrl)));
+  const [T, oc, bgu] = await Promise.all([
+    import(threeUrl), import(addon('vw-orbit')), import(addon('vw-bgu'))
+  ]);
+  return { THREE: T, OrbitControls: oc.OrbitControls, mergeVertices: bgu.mergeVertices };
+})();
+
+/* ====== 模型片段（build_viewer.py 注入；必须定义 const MODEL） ====== */
+/*__MODEL_SNIPPET__*/
+/* ====== 模型片段结束 ====== */
+
+if (typeof MODEL === 'undefined') throw new Error('model.js 必须定义 const MODEL = { ... }');
+
+const R0 = MODEL.radius || 2;
+const C0 = new THREE.Vector3(...(MODEL.center || [0, 0, 0]));
+const D  = R0 * 4.2;                       // 经验视距：包围球半径 × 4.2，FOV 38
+// 机位一律相对 center：模型不居中时（工具包按毫米坐标直接建形）也能正对
+const DEF_VIEWS = {
+  iso:   [C0.x - D * 0.70, C0.y + D * 0.35, C0.z + D * 0.63],
+  front: [C0.x,            C0.y,            C0.z + D],
+  back:  [C0.x,            C0.y,            C0.z - D],
+  top:   [C0.x,            C0.y + D,        C0.z + 0.001],
+  left:  [C0.x - D,        C0.y,            C0.z],
+  right: [C0.x + D,        C0.y,            C0.z],
+  under: [C0.x - D * 0.62, C0.y - D * 0.38, C0.z + D * 0.68]
+};
+const VIEWS = Object.assign(DEF_VIEWS, MODEL.views || {});
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xeef3f7);
+
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, R0 * 40);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.copy(C0);
+controls.minDistance = R0 * 1.1;
+controls.maxDistance = R0 * 9;
+
+/* ---------- 绕向自愈 ----------
+ * 手写/自动生成的面片绕向常与顶点法线相反。双面材质下看不出破绽，
+ * 但 GPU 会按背面法线翻转，明暗整个反过来。这里逐三角形对齐。 */
+function _vwRepairWinding(P, N, I) {
+  let n = 0;
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+    const wx = P[c] - P[a], wy = P[c + 1] - P[a + 1], wz = P[c + 2] - P[a + 2];
+    const gx = uy * wz - uz * wy, gy = uz * wx - ux * wz, gz = ux * wy - uy * wx;
+    if (Math.hypot(gx, gy, gz) < 1e-12) continue;
+    const sx = N[a] + N[b] + N[c], sy = N[a + 1] + N[b + 1] + N[c + 1], sz = N[a + 2] + N[b + 2] + N[c + 2];
+    if (gx * sx + gy * sy + gz * sz < 0) { I[t + 1] = c / 3; I[t + 2] = b / 3; n++; }
+  }
+  return n;
+}
+
+/* ---------- 全局定向 ----------
+ * 分片建模可能整体朝内：几何法线与顶点法线同向，但都指向内部，
+ * 逐面纠正发现不了，体积却为负。先整体翻一次再逐面对齐。 */
+(function () {
+  let v = 0;
+  (MODEL.meshes || []).forEach(function (m) {
+    const P = m.positions, I = m.indices;
+    if (!P || !I) return;
+    for (let t = 0; t < I.length; t += 3) {
+      const ia = I[t] * 3, ib = I[t + 1] * 3, ic = I[t + 2] * 3;
+      const a = [P[ia], P[ia + 1], P[ia + 2]];
+      const b = [P[ib], P[ib + 1], P[ib + 2]];
+      const c = [P[ic], P[ic + 1], P[ic + 2]];
+      v += (a[0] * (b[1] * c[2] - b[2] * c[1])
+          - a[1] * (b[0] * c[2] - b[2] * c[0])
+          + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6;
+    }
+  });
+  if (v < 0) {
+    (MODEL.meshes || []).forEach(function (m) {
+      const I = m.indices, N = m.normals;
+      if (I) for (let t = 0; t < I.length; t += 3) { const tmp = I[t + 1]; I[t + 1] = I[t + 2]; I[t + 2] = tmp; }
+      if (N) for (let i = 0; i < N.length; i++) N[i] = -N[i];
+    });
+    console.warn('[viewer] 模型整体朝内（体积 ' + v.toFixed(3) + '），已统一翻转为朝外');
+  }
+})();
+
+/* ---------- 网格：自动合并顶点 + 平滑着色 ---------- */
+let flippedTotal = 0;
+(MODEL.meshes || []).forEach(function (m) {
+  if (!m.positions || !m.positions.length) return;
+  let g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(m.positions, 3));
+  if (m.indices && m.indices.length) g.setIndex(m.indices);
+  if (m.normals && m.normals.length === m.positions.length) {
+    // 自动重建的体素网格自带平滑法线，顶点不可合并
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(m.normals, 3));
+    if (m.indices && m.indices.length) {
+      const P = m.positions, N = m.normals, I = m.indices.slice();
+      flippedTotal += _vwRepairWinding(P, N, I);
+      g.setIndex(I);
+    }
+  } else {
+    g = mergeVertices(g, 1e-4);
+    g.computeVertexNormals();
+  }
+  const mat = new THREE.MeshStandardMaterial({
+    color:     m.highlight ? 0xe6c49b : (m.color ?? 0xa9cdec),
+    roughness: m.highlight ? 0.70 : (m.roughness ?? 0.62),
+    metalness: 0.04,
+    side: THREE.DoubleSide,
+    flatShading: false,           // 必须为 false，否则扭曲四边形出现明暗条纹
+    // 棱线是独立的 LineSegments，落在圆柱面这类「多边形逼近曲面」上时会与面片
+    // 深度打架，表现为断成点线的虚线（2026-11-11 圆柱斜台那道题真踩过）。
+    // 把面整体往后推一点，线就稳定浮在表面。只影响深度比较，不改几何。
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1
+  });
+  scene.add(new THREE.Mesh(g, mat));
+});
+
+/* ---------- 特征棱线：手绘，不用 EdgesGeometry ---------- */
+const ep = [];
+(MODEL.edges || []).forEach(v => ep.push(v));           // 扁平数值数组
+(MODEL.polylines || []).forEach(function (pl) {          // [[x,y,z], ...]
+  for (let i = 1; i < pl.length; i++) ep.push(...pl[i - 1], ...pl[i]);
+});
+if (ep.length) {
+  const lg = new THREE.BufferGeometry();
+  lg.setAttribute('position', new THREE.Float32BufferAttribute(ep, 3));
+  scene.add(new THREE.LineSegments(lg,
+    new THREE.LineBasicMaterial({ color: MODEL.edgeColor ?? 0x14486f })));
+}
+
+/* ---------- 光照：四面补光，避免切口全黑 ---------- */
+scene.add(new THREE.HemisphereLight(0xffffff, 0x93a8bb, 1.55));
+const d1 = new THREE.DirectionalLight(0xffffff, 1.45); d1.position.set(4, 7, 5);
+const d2 = new THREE.DirectionalLight(0xc5dff5, 0.75); d2.position.set(-5, 2, -4);
+const d3 = new THREE.DirectionalLight(0xffffff, 0.35); d3.position.set(0, -5, 2);
+const d4 = new THREE.DirectionalLight(0xdcecff, 0.55); d4.position.set(-6, 1, -3);
+scene.add(d1, d2, d3, d4);
+
+/* ---------- 视角切换 ---------- */
+const viewButtons = Array.from(document.querySelectorAll('#dock [data-view]'));
+let initial = viewButtons.find(b => b.classList.contains('on')) || viewButtons[0];
+const initialName = initial ? initial.dataset.view : 'iso';
+camera.position.set(...(VIEWS[initialName] || VIEWS.iso));
+let animTo = null;
+
+function goView(name) {
+  if (!VIEWS[name]) return;
+  animTo = { from: camera.position.clone(), to: new THREE.Vector3(...VIEWS[name]), t: 0 };
+  viewButtons.forEach(b => b.classList.toggle('on', b.dataset.view === name));
+}
+viewButtons.forEach(b => b.onclick = () => goView(b.dataset.view));
+
+/* ---------- 自动旋转 ---------- */
+const spinBtn = document.getElementById('spin');
+let spinning = spinBtn.classList.contains('on');
+spinBtn.onclick = function () {
+  spinning = !spinning;
+  spinBtn.classList.toggle('on', spinning);
+};
+renderer.domElement.addEventListener('pointerdown', function () {
+  if (spinning) { spinning = false; spinBtn.classList.remove('on'); }
+});
+
+/* ---------- 渲染循环 ---------- */
+const clock = new THREE.Clock();
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = clock.getDelta();
+  if (animTo) {
+    animTo.t = Math.min(1, animTo.t + dt * 2.4);
+    const e = 1 - Math.pow(1 - animTo.t, 3);
+    camera.position.lerpVectors(animTo.from, animTo.to, e);
+    if (animTo.t >= 1) animTo = null;
+  }
+  controls.autoRotate = spinning && !animTo;
+  controls.autoRotateSpeed = 0.9;
+  controls.update();
+  renderer.render(scene, camera);
+}
+addEventListener('resize', function () {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+tick();
+window.__viewerOK = true;
+const loading = document.getElementById('loading');
+loading.style.opacity = 0;
+setTimeout(() => loading.remove(), 420);
+</script>
+</body>
+</html>
