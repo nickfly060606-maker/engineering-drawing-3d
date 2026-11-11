@@ -2,9 +2,9 @@
 
 <img src="docs/images/hero.png" alt="四道真题由三视图还原出的三维模型" width="900">
 
-<h1>three-view-to-3d</h1>
+<h1>engineering-drawing-3d</h1>
 
-<p><b>把工程制图的三视图，反推成能转的立体图。</b><br>
+<p><b>工程制图备考 · 把三视图反推成能转的立体图。</b><br>
 给 AI 一张截图，换回一个可以任意旋转、<i>并且经过数值自检</i>的三维模型。</p>
 
 <p>
@@ -75,7 +75,7 @@
 </tr>
 </table>
 
-> **在线试玩** → [第 ⑤ 题（支架）的可旋转页面](https://nickfly060606-maker.github.io/three-view-to-3d/demo.html)
+> **在线试玩** → [第 ⑤ 题（支架）的可旋转页面](https://nickfly060606-maker.github.io/engineering-drawing-3d/demo.html)
 > 拖拽旋转 · 滚轮缩放 · 右键平移 · 底部切主视/俯视/左视/右视。单文件、three.js 已内联，断网也能开。
 
 ## 为什么不是「看着像就行」
@@ -102,7 +102,9 @@
 
 ```bash
 # 1) 放进宿主的 skills 目录（仓库根目录就是 skill 本体）
-git clone https://github.com/<you>/three-view-to-3d.git ~/.workbuddy/skills/three-view-to-3d
+#    skill 名是 three-view-to-3d，所以克隆到同名目录
+git clone https://github.com/nickfly060606-maker/engineering-drawing-3d.git \
+  ~/.workbuddy/skills/three-view-to-3d
 #   Claude Code 用：  ~/.claude/skills/three-view-to-3d
 #   只要当前项目用：  <项目>/.workbuddy/skills/three-view-to-3d
 
@@ -226,7 +228,7 @@ function F(poly, nOut, hl) {
 ## 目录结构
 
 ```
-three-view-to-3d/
+engineering-drawing-3d/
 ├── SKILL.md                     # 宿主读这个：模式选择、步骤、48 条硬规则（全是踩过的坑）
 ├── docs/
 │   ├── cases.md                 # 9 道题的完整复盘：形体、参数、坑、验证数字
